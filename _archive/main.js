@@ -5,24 +5,20 @@ import { PixiPlugin } from "gsap/PixiPlugin";
 import { Spine } from "pixi-spine";
 
 (async () => {
-  console.log(PIXI.VERSION);
-
   const initGsap = async () => {
     gsap.registerPlugin(PixiPlugin);
     PixiPlugin.registerPIXI(PIXI);
   };
 
   const initApp = async () => {
-    const app = new PIXI.Application({
+    const app = new PIXI.Application();
+    await app.init({
+      // width: window.innerWidth,
+      // height: window.innerHeight,
+      backgroundAlpha: 0,
       resizeTo: window,
     });
-    // await app.init({
-    //   // width: window.innerWidth,
-    //   // height: window.innerHeight,
-    //   backgroundAlpha: 0,
-    //   resizeTo: window,
-    // });
-    document.body.appendChild(app.view);
+    document.body.appendChild(app.canvas);
 
     return app;
   };
@@ -83,29 +79,22 @@ import { Spine } from "pixi-spine";
   };
 
   window.onload = async () => {
-    // initGsap();
+    initGsap();
     const app = await initApp();
-    // const bunny = await initBunny(app);
+    const bunny = await initBunny(app);
 
-    PIXI.Assets.load("/spineboy/spineboy.json")
-      .then((resource) => {
-        console.log(resource);
-        const animation = new Spine(resource.spineData);
-        app.stage.addChild(animation);
-        console.log(animation);
+    // let resource = await PIXI.Assets.load("assets/spineboy-pro.json");
+    // const animation = new Spine(resource.spineData);
+    // app.stage.addChild(animation);
 
-        // let spine = app.stage.addChild(new Spine(resource.spineData));
-        animation.position.set(app.renderer.width / 2, app.renderer.height);
-        animation.state.setAnimation(0, "walk", true);
-        animation.state.timeScale = 0.02;
-        // animation.autoUpdate = true;
+    app.ticker.add(() => {
+      bunny.rotation += 0.01;
+    });
 
-        app.ticker.add((dt) => {
-          animation.update(dt);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    window.addEventListener("resize", () => {
+      app.renderer.resize(window.innerWidth, window.innerHeight);
+      bunny.x = app.renderer.width / 2;
+      bunny.y = app.renderer.height / 2;
+    });
   };
 })();
