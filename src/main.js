@@ -87,7 +87,7 @@ import { Spine } from "pixi-spine";
     const app = await initApp();
     // const bunny = await initBunny(app);
 
-    PIXI.Assets.load("/spineboy/spineboy.json")
+    PIXI.Assets.load("/spineboy-pro/spineboy-pro.json")
       .then((resource) => {
         console.log(resource);
         const animation = new Spine(resource.spineData);
@@ -96,12 +96,44 @@ import { Spine } from "pixi-spine";
 
         // let spine = app.stage.addChild(new Spine(resource.spineData));
         animation.position.set(app.renderer.width / 2, app.renderer.height);
-        animation.state.setAnimation(0, "walk", true);
+        animation.state.setAnimation(0, "idle", true);
         animation.state.timeScale = 0.02;
+        animation.scale.set(0.5);
+        animation.eventMode = "dynamic";
         // animation.autoUpdate = true;
+
+        animation.stateData.setMix("idle", "jump", 0.2);
+        animation.stateData.setMix("jump", "idle", 0.4);
 
         app.ticker.add((dt) => {
           animation.update(dt);
+        });
+
+        // animation.state.addListener({
+        //   complete: (trackIndex, loopCount) => {
+        //     console.log(trackIndex);
+        //     animation.state.setAnimation(0, "idle", true);
+        //     // animation.state.mixDuration = 0.5;
+        //   },
+        // });
+
+        animation.on("pointerdown", (event) => {
+          console.log(event);
+          animation.state.setAnimation(0, "jump", false);
+          animation.state.addAnimation(0, "idle", true, 0);
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key == " ") {
+            animation.state.setAnimation(0, "jump", false);
+            animation.state.addAnimation(0, "idle", true, 0);
+          }
+        });
+        document.addEventListener("keyup", (event) => {});
+
+        window.addEventListener("resize", () => {
+          app.renderer.resize(window.innerWidth, window.innerHeight);
+          animation.position.set(app.renderer.width / 2, app.renderer.height);
         });
       })
       .catch((err) => {

@@ -1,6 +1,7 @@
 html {
     box-sizing: border-box;
     font-size: 16px;
+    /* background-color: black; */
   }
   
   *, *:before, *:after {
@@ -22,7 +23,11 @@ html {
     height: auto;
   }
 
+  body {
+    overflow: hidden;
+  }
+
   canvas {
     width: 100%;
-    height: 99vh;
+    height: calc(100vh + 4px);
   }
