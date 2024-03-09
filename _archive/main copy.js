@@ -1,16 +1,12 @@
-import "pixi-spine";
 import * as PIXI from "pixi.js";
 import { gsap } from "gsap";
 import { PixiPlugin } from "gsap/PixiPlugin";
-import { Spine } from "pixi-spine";
 
 (async () => {
-    const initGsap = async () => {
+    window.onload = async () => {
         gsap.registerPlugin(PixiPlugin);
         PixiPlugin.registerPIXI(PIXI);
-    };
 
-    const initApp = async () => {
         const app = new PIXI.Application();
         await app.init({
             // width: window.innerWidth,
@@ -18,19 +14,15 @@ import { Spine } from "pixi-spine";
             backgroundAlpha: 0,
             resizeTo: window,
         });
+
         document.body.appendChild(app.canvas);
-
-        return app;
-    };
-
-    const initBunny = async (app) => {
         const texture = await PIXI.Assets.load("src/assets/sample.png");
         const bunny = new PIXI.Sprite(texture);
 
         bunny.x = app.renderer.width / 2;
         bunny.y = app.renderer.height / 2;
+
         bunny.anchor.set(0.5);
-        bunny.eventMode = "dynamic";
 
         app.stage.addChild(bunny);
 
@@ -74,18 +66,7 @@ import { Spine } from "pixi-spine";
                 duration: 0.2,
             });
         });
-
-        return bunny;
-    };
-
-    window.onload = async () => {
-        initGsap();
-        const app = await initApp();
-        const bunny = await initBunny(app);
-
-        // let resource = await PIXI.Assets.load("spine-data-1/HERO.json");
-        // const animation = new Spine(resource.spineData);
-        // app.stage.addChild(animation);
+        bunny.eventMode = "dynamic";
 
         app.ticker.add(() => {
             bunny.rotation += 0.01;
