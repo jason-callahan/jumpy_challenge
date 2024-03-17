@@ -112,7 +112,7 @@ import { Spine } from "pixi-spine";
     // superSpineboy.state.setAnimation(1, "shoot", true);
 
     superSpineboy.stateData.setMix("idle", "jump", 0.2);
-    superSpineboy.stateData.setMix("jump", "idle", 0.4);
+    superSpineboy.stateData.setMix("jump", "idle", 0.2);
     superSpineboy.stateData.setMix("idle", "walk", 0.15);
     superSpineboy.stateData.setMix("walk", "idle", 0.2);
     superSpineboy.stateData.setMix("walk", "jump", 0.2);
@@ -131,24 +131,29 @@ import { Spine } from "pixi-spine";
       else superSpineboy.scale.x = -0.5;
     };
 
-    superSpineboy["walking"] = false;
-    let jumping = false;
     let aiming = false;
+    let jumpForce = -15;
+    superSpineboy["vy"] = 0;
+    superSpineboy["vx"] = 0;
+    superSpineboy["walking"] = false;
+    superSpineboy["jumping"] = false;
     document.addEventListener("keydown", (event) => {
       event.preventDefault = true;
-      console.log("keydown: ", event);
+      // console.log("keydown: ", event);
 
       if (event.code == "Space") {
-        if (!jumping) {
-          jumping = true;
+        if (!superSpineboy["jumping"] && superSpineboy.vy <= 0) {
+          superSpineboy["jumping"] = true;
           superSpineboy.state.setAnimation(0, "jump", false);
+          superSpineboy.vy += jumpForce;
+          console.log("jump: " + superSpineboy.vy);
           // superSpineboy.state.addAnimation(0, "idle", true, 0);
-          gsap.to(superSpineboy, {
-            pixi: {
-              y: "-=200",
-            },
-            duration: 0.5,
-          });
+          // gsap.to(superSpineboy, {
+          //   pixi: {
+          //     y: "-=200",
+          //   },
+          //   duration: 0.5,
+          // });
         }
       }
 
@@ -156,6 +161,7 @@ import { Spine } from "pixi-spine";
         flip("right");
         if (!superSpineboy["walking"]) {
           superSpineboy["walking"] = true;
+          superSpineboy.vx = 5;
           superSpineboy.state.setAnimation(0, "walk", true);
         }
       }
@@ -177,6 +183,7 @@ import { Spine } from "pixi-spine";
         flip("left");
         if (!superSpineboy["walking"]) {
           superSpineboy["walking"] = true;
+          superSpineboy.vx = -5;
           superSpineboy.state.setAnimation(0, "walk", true);
         }
       }
@@ -199,11 +206,12 @@ import { Spine } from "pixi-spine";
     document.addEventListener("keyup", (event) => {
       if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
         superSpineboy["walking"] = false;
+        superSpineboy.vx = 0;
         superSpineboy.state.setAnimation(0, "idle", true);
       }
 
       if (event.code == "Space") {
-        jumping = false;
+        superSpineboy["jumping"] = false;
       }
 
       if (event.key == "a") {
@@ -243,9 +251,9 @@ import { Spine } from "pixi-spine";
     superSpineboy.state.addListener({
       complete: (trackEntry, loopCount) => {
         // console.log(trackEntry);
-        console.log(superSpineboy["walking"]);
+        // console.log(superSpineboy["walking"]);
         if (trackEntry.animation.name == "jump") {
-          jumping = false;
+          superSpineboy["jumping"] = false;
           if (superSpineboy["walking"]) {
             superSpineboy.state.setAnimation(0, "walk", true);
           } else {
@@ -258,22 +266,95 @@ import { Spine } from "pixi-spine";
     return superSpineboy;
   };
 
+  const groundFactory = async (width) => {
+    let resource = await PIXI.Assets.load("/iP4_ground_half.png");
+    const ground = new PIXI.TilingSprite(resource, width, resource.height);
+    return ground;
+  };
+
+  const initGround = async (app) => {
+    let ground = await groundFactory(app.renderer.width + 40);
+    app.stage.addChild(ground);
+    ground.position.set(-20, app.renderer.height - ground.height);
+
+    return ground;
+  };
+
+  const gravity = 0.5;
   window.onload = async () => {
     initGsap();
+    const debug = document.querySelector(".debug");
     const app = await initApp();
     // const bunny = await initBunny(app);
-    const dragon = await initDragon(app);
     const superSpineboy = await initSuperSpineboy(app);
 
+    var platforms = [];
+    const ground = await initGround(app);
+    platforms.push(ground);
+
+    const platform1 = await groundFactory(300);
+    app.stage.addChild(platform1);
+    platform1.position.set(600, app.renderer.height - 400);
+    platforms.push(platform1);
+
+    const platform2 = await groundFactory(300);
+    app.stage.addChild(platform2);
+    platform2.position.set(200, app.renderer.height - 600);
+    platforms.push(platform2);
+
+    // const dragon = await initDragon(app);
+
+    let debugText = new PIXI.Text("debugging...", {
+      fill: "white",
+      fontSize: 16,
+    });
+    debugText.position.set(10, 10);
+    app.stage.addChild(debugText);
+
+    superSpineboy.y = app.renderer.height - 200;
+
+    let tempText = "";
+    let aboveGround = superSpineboy.y - 50;
     app.ticker.add((dt) => {
+      superSpineboy.vy += gravity;
+      aboveGround = superSpineboy.y - 100;
+
+      superSpineboy.y += superSpineboy.vy;
+
+      for (let i = 0; i < platforms.length; i++) {
+        let p = platforms[i];
+        let py = p.y + 25;
+        if (
+          superSpineboy.vy > 0 &&
+          aboveGround < py &&
+          superSpineboy.y >= py &&
+          superSpineboy.x > p.x - 10 &&
+          superSpineboy.x < p.x + p.width + 10
+        ) {
+          superSpineboy.vy = 0;
+          superSpineboy.y = py;
+        }
+        // p.y += 1;
+      }
+
+      tempText = `app - width:${app.renderer.width}, height:${app.renderer.height}\n`;
+      tempText += `ground - x:${ground.x}, y:${ground.y}\n`;
+      tempText += `platform1 - x:${platform1.x}, y:${platform1.y}\n`;
+      tempText += `platform2 - x:${platform2.x}, y:${platform2.y}\n`;
+      tempText += `aboveGround:${aboveGround}\n`;
+      tempText += `superSpineboy - \nx:${superSpineboy.x}, y:${superSpineboy.y}\n`;
+      tempText += `vx:${superSpineboy.vx}, vy:${superSpineboy.vy}`;
+      debugText.text = tempText;
+
       superSpineboy.update(dt);
       // bunny.rotation += 0.01;
-      dragon.update(dt);
-      dragon.x -= 10;
-      if (dragon.x < -200) dragon.x = 2100;
+      // dragon.update(dt);
+      // dragon.x -= 10;
+      // if (dragon.x < -200) dragon.x = 2100;
 
-      if (superSpineboy.walking)
-        superSpineboy.x += superSpineboy.facingRight ? 5 : -5;
+      superSpineboy.x += superSpineboy.vx;
+      // if (superSpineboy.walking)
+      //   superSpineboy.x += superSpineboy.facingRight ? 5 : -5;
       if (superSpineboy.x > window.innerWidth + 20) superSpineboy.x = -49;
       if (superSpineboy.x < -50) superSpineboy.x = window.innerWidth + 19;
     });
