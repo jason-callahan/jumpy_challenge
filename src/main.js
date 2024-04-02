@@ -3,9 +3,18 @@ import * as PIXI from "pixi.js";
 import { gsap } from "gsap";
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { Spine } from "pixi-spine";
+import SuperSpineboy from "./superspineboy/SuperSpineboy";
 
 (async () => {
   console.log(PIXI.VERSION);
+
+  class KeyCode {
+    static JUMP = "Space";
+    static MOVE_RIGHT = "ArrowRight";
+    static MOVE_LEFT = "ArrowLeft";
+    static RUN = "KeyX";
+    static SHOOT = "Shift";
+  }
 
   const initGsap = async () => {
     gsap.registerPlugin(PixiPlugin);
@@ -95,41 +104,42 @@ import { Spine } from "pixi-spine";
     return dragon;
   };
 
-  const initSuperSpineboy = async (app) => {
+  const initEvents = (app) => {
+    const gameWorld = app.stage.getChildByName("gameWorld");
+    const superSpineboy = gameWorld.getChildByName("superSpineboy");
+
+    document.addEventListener("keydown", (event) => {
+      console.log(event);
+      if (event.code === KeyCode.JUMP) superSpineboy.jump();
+      if (event.code === KeyCode.MOVE_RIGHT) superSpineboy.move(superSpineboy.DIR_RIGHT);
+      if (event.code === KeyCode.MOVE_LEFT) superSpineboy.move(superSpineboy.DIR_LEFT);
+      if (event.code === KeyCode.RUN) superSpineboy.run();
+      if (event.key === KeyCode.SHOOT) superSpineboy.shoot();
+    });
+
+    document.addEventListener("keyup", (event) => {
+      console.log(event);
+      if ([KeyCode.MOVE_LEFT, KeyCode.MOVE_RIGHT].includes(event.code)) superSpineboy.stop();
+      if (event.code === KeyCode.RUN) superSpineboy.stopRunning();
+    });
+  };
+
+  const initSuperSpineboy = async (gameWorld) => {
     let resource = await PIXI.Assets.load("/spineboy-pro/spineboy-pro.json");
+    const superSpineboy = new SuperSpineboy(resource);
+    superSpineboy.gsap = gsap;
+    gameWorld.addChild(superSpineboy);
 
-    console.log(resource);
-    const superSpineboy = new Spine(resource.spineData);
-    app.stage.addChild(superSpineboy);
-    console.log(superSpineboy);
-
-    superSpineboy.position.set(app.renderer.width / 4, app.renderer.height);
     superSpineboy.state.timeScale = 0.02;
-    superSpineboy.scale.set(0.5);
+    superSpineboy.scale.set(0.3);
+    superSpineboy.position.set(gameWorld.width / 4, gameWorld.height);
     superSpineboy.eventMode = "dynamic";
 
-    superSpineboy.state.setAnimation(0, "idle", true);
-    // superSpineboy.state.setAnimation(1, "shoot", true);
+    return superSpineboy;
+  };
 
-    superSpineboy.stateData.setMix("idle", "jump", 0.2);
-    superSpineboy.stateData.setMix("jump", "idle", 0.2);
-    superSpineboy.stateData.setMix("idle", "walk", 0.15);
-    superSpineboy.stateData.setMix("walk", "idle", 0.2);
-    superSpineboy.stateData.setMix("walk", "jump", 0.2);
-    superSpineboy.stateData.setMix("jump", "walk", 0.2);
-    superSpineboy.stateData.setMix("death", "jump", 0.2);
-    superSpineboy.stateData.setMix("idle", "hoverboard", 0.3);
-    superSpineboy.stateData.setMix("hoverboard", "walk", 0.3);
-
-    let aimBone = superSpineboy.skeleton.findBone("crosshair");
-    let aimSlot = superSpineboy.skeleton.findSlot("crosshair");
-
-    superSpineboy["facingRight"] = true;
-    const flip = (direction) => {
-      superSpineboy.facingRight = direction == "right";
-      if (superSpineboy.facingRight) superSpineboy.scale.x = 0.5;
-      else superSpineboy.scale.x = -0.5;
-    };
+  const _initSuperSpineboy = async (superSpineboy, app, gameWorld) => {
+    let resource = await PIXI.Assets.load("/spineboy-pro/spineboy-pro.json");
 
     let aiming = false;
     let jumpForce = -15;
@@ -266,18 +276,38 @@ import { Spine } from "pixi-spine";
     return superSpineboy;
   };
 
-  const groundFactory = async (width) => {
+  const groundFactory = async (width, offset = 0) => {
     let resource = await PIXI.Assets.load("/iP4_ground_half.png");
     const ground = new PIXI.TilingSprite(resource, width, resource.height);
+    ground.tilePosition.x = offset;
     return ground;
   };
 
-  const initGround = async (app) => {
-    let ground = await groundFactory(app.renderer.width + 40);
-    app.stage.addChild(ground);
-    ground.position.set(-20, app.renderer.height - ground.height);
+  const initGround = async (app, gameWorld) => {
+    let ground = await groundFactory(app.renderer.width + 100);
+    ground.name = "ground";
+    gameWorld.addChild(ground);
+    ground.position.set(-50, app.renderer.height - ground.height);
 
     return ground;
+  };
+
+  const isCollision = (bounds1, bounds2) => {
+    return (
+      bounds1.x + bounds1.width > bounds2.x &&
+      bounds1.x < bounds2.x + bounds2.width &&
+      bounds1.y + bounds1.height > bounds2.y &&
+      bounds1.y < bounds2.y + bounds2.height
+    );
+  };
+
+  const isAbove = (bounds1, bounds2) => {
+    return (
+      bounds1.x + bounds1.width > bounds2.x &&
+      bounds1.x < bounds2.x + bounds2.width &&
+      bounds1.y + bounds1.height > bounds2.y &&
+      bounds1.y < bounds2.y + bounds2.height
+    );
   };
 
   const gravity = 0.5;
@@ -285,24 +315,52 @@ import { Spine } from "pixi-spine";
     initGsap();
     const debug = document.querySelector(".debug");
     const app = await initApp();
+    const gameWorld = new PIXI.Container();
+    gameWorld.name = "gameWorld";
+    app.stage.addChild(gameWorld);
     // const bunny = await initBunny(app);
-    const superSpineboy = await initSuperSpineboy(app);
+    // const superSpineboy = await initSuperSpineboy(app, gameWorld);
+
+    // let resource = await PIXI.Assets.load("/spineboy-pro/spineboy-pro.json");
+    // const superSpineboy = new SuperSpineBoy(gameWorld, resource);
+    // gameWorld.addChild(superSpineboy);
+    // superSpineboy.position.set(app.renderer.width / 4, app.renderer.height);
+
+    const superSpineboy = await initSuperSpineboy(gameWorld);
 
     var platforms = [];
-    const ground = await initGround(app);
+    const ground = await initGround(app, gameWorld);
+    ground.name = "ground";
     platforms.push(ground);
 
-    const platform1 = await groundFactory(300);
-    app.stage.addChild(platform1);
-    platform1.position.set(600, app.renderer.height - 400);
+    const platform1 = await groundFactory(300, -30);
+    gameWorld.addChild(platform1);
+    platform1.position.set(600, app.renderer.height - 300);
     platforms.push(platform1);
 
-    const platform2 = await groundFactory(300);
-    app.stage.addChild(platform2);
-    platform2.position.set(200, app.renderer.height - 600);
+    const platform2 = await groundFactory(300, -400);
+    gameWorld.addChild(platform2);
+    platform2.position.set(200, app.renderer.height - 500);
     platforms.push(platform2);
 
+    const platform3 = await groundFactory(300, -200);
+    gameWorld.addChild(platform3);
+    platform3.position.set(800, app.renderer.height - 700);
+    platforms.push(platform3);
+
+    const platform4 = await groundFactory(300, -200);
+    gameWorld.addChild(platform4);
+    platform4.position.set(300, app.renderer.height - 900);
+    platforms.push(platform4);
+
     // const dragon = await initDragon(app);
+
+    // // for testing collisions
+    // const graphics = new PIXI.Graphics();
+    // graphics.beginFill(0xff0000); // Red color
+    // graphics.drawRect(0, 0, 50, 5); // Adjust the radius as needed
+    // graphics.endFill();
+    // gameWorld.addChild(graphics);
 
     let debugText = new PIXI.Text("debugging...", {
       fill: "white",
@@ -311,57 +369,117 @@ import { Spine } from "pixi-spine";
     debugText.position.set(10, 10);
     app.stage.addChild(debugText);
 
+    initEvents(app);
+    window.addEventListener("resize", async () => {
+      app.renderer.resize(window.innerWidth, window.innerHeight);
+      let ground = gameWorld.getChildByName("ground");
+      gameWorld.removeChild(ground);
+      ground = await initGround(app, gameWorld);
+      platforms[0] = ground;
+      superSpineboy.y = app.renderer.height - 200;
+      superSpineboy.vy = 0;
+    });
+
     superSpineboy.y = app.renderer.height - 200;
 
     let tempText = "";
     let aboveGround = superSpineboy.y - 50;
+    let bounds1, bounds2;
     app.ticker.add((dt) => {
       superSpineboy.vy += gravity;
       aboveGround = superSpineboy.y - 100;
-
       superSpineboy.y += superSpineboy.vy;
+      superSpineboy.x += superSpineboy.vx;
+
+      bounds1 = superSpineboy.getBounds();
+      bounds1.width -= 60;
+      bounds1.x += 25;
+
+      // graphics.x = bounds1.x;
+      // graphics.y = bounds1.y;
+      // graphics.width = bounds1.width;
+      // graphics.height = bounds1.height;
 
       for (let i = 0; i < platforms.length; i++) {
         let p = platforms[i];
         let py = p.y + 25;
+        bounds2 = p.getBounds();
+        bounds2.y += 25;
         if (
           superSpineboy.vy > 0 &&
           aboveGround < py &&
-          superSpineboy.y >= py &&
-          superSpineboy.x > p.x - 10 &&
-          superSpineboy.x < p.x + p.width + 10
+          isCollision(bounds1, bounds2)
+          // superSpineboy.x + superSpineboy.width > p.x &&
+          // superSpineboy.x < p.x + p.width &&
+          // superSpineboy.y + superSpineboy.height > p.y &&
+          // superSpineboy.y < p.y + p.height
         ) {
           superSpineboy.vy = 0;
           superSpineboy.y = py;
+          superSpineboy.hitGround();
+          // console.log(`hitGround - py: ${p.y}, superSpineBoy y:${superSpineboy.y}, vy:${superSpineboy.vy}`);
         }
-        // p.y += 1;
+        // p.x += 1;
+      }
+
+      // if (!superSpineboy.onground) {
+      //   superSpineboy.vy += gravity;
+      //   aboveGround = superSpineboy.y + 100;
+      //   superSpineboy.y += superSpineboy.vy;
+      // }
+
+      // console.log(`vy: ${superSpineboy.vy}, y: ${superSpineboy.y}`);
+
+      if (superSpineboy.y < 500 && gameWorld.y == 0) {
+        console.log("move up");
+        gsap.to(gameWorld, {
+          pixi: {
+            y: 200,
+          },
+          duration: 2,
+          ease: "power1.inOut",
+        });
+      }
+
+      if (superSpineboy.y < 0 && gameWorld.y == 200) {
+        console.log("move up");
+        gsap.to(gameWorld, {
+          pixi: {
+            y: 400,
+          },
+          duration: 2,
+          ease: "power1.inOut",
+        });
       }
 
       tempText = `app - width:${app.renderer.width}, height:${app.renderer.height}\n`;
+      tempText += `gameWorld - x:${gameWorld.x}, y:${gameWorld.y}, width:${gameWorld.width}, height:${gameWorld.height}\n`;
       tempText += `ground - x:${ground.x}, y:${ground.y}\n`;
       tempText += `platform1 - x:${platform1.x}, y:${platform1.y}\n`;
-      tempText += `platform2 - x:${platform2.x}, y:${platform2.y}\n`;
-      tempText += `aboveGround:${aboveGround}\n`;
-      tempText += `superSpineboy - \nx:${superSpineboy.x}, y:${superSpineboy.y}\n`;
-      tempText += `vx:${superSpineboy.vx}, vy:${superSpineboy.vy}`;
+      tempText += `platform2 - x:${platform2.x}, y:${platform2.y}`;
+      tempText += `\naboveGround:${aboveGround}`;
+      tempText += `\nsuperSpineboy - \nx:${superSpineboy.x}, y:${superSpineboy.y}`;
+      // tempText += `\nwidth: ${superSpineboy.width}, height: ${superSpineboy.height}`;
+      tempText += `\nvx:${superSpineboy.vx}, vy:${superSpineboy.vy}`;
+      tempText += `\nmoving: ${superSpineboy.moving}, running: ${superSpineboy.running}, jumping: ${superSpineboy.jumping}, onground: ${superSpineboy.onground}`;
+      tempText += `\nfrontFootTip: ${superSpineboy.frontFootTipBone.y}`;
+      // tempText += `\nbounds: ${bounds1}`;
+      tempText += `\nanimation: ${superSpineboy.state.tracks[0].animation.name}`;
+      tempText += `\nstage: ${app.stage.children.length}, gameWorld: ${gameWorld.children.length}, platforms: ${platforms.length}`;
       debugText.text = tempText;
 
       superSpineboy.update(dt);
+
+      // graphics.x = superSpineboy.x;
+      // graphics.y = superSpineboy.y;
+
       // bunny.rotation += 0.01;
       // dragon.update(dt);
       // dragon.x -= 10;
       // if (dragon.x < -200) dragon.x = 2100;
 
-      superSpineboy.x += superSpineboy.vx;
-      // if (superSpineboy.walking)
-      //   superSpineboy.x += superSpineboy.facingRight ? 5 : -5;
       if (superSpineboy.x > window.innerWidth + 20) superSpineboy.x = -49;
       if (superSpineboy.x < -50) superSpineboy.x = window.innerWidth + 19;
-    });
-
-    window.addEventListener("resize", () => {
-      app.renderer.resize(window.innerWidth, window.innerHeight);
-      // superSpineboy.position.set(app.renderer.width / 3, app.renderer.height);
     });
   };
 })();
