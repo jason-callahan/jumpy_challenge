@@ -21,7 +21,7 @@ export default class SuperSpineboy extends Spine {
   SCALE = 0.3;
   WALK_SPEED = 4;
   RUN_SPEED = 10;
-  JUMP_FORCE = -17;
+  JUMP_FORCE = -20;
 
   constructor(resource, name = "superSpineboy") {
     super(resource.spineData);

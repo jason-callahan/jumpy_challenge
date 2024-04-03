@@ -36,64 +36,12 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     return app;
   };
 
-  const initBunny = async (app) => {
-    const texture = await PIXI.Assets.load("src/assets/sample.png");
-    const bunny = new PIXI.Sprite(texture);
-
-    bunny.x = app.renderer.width / 2;
-    bunny.y = app.renderer.height / 3;
-    bunny.anchor.set(0.5);
-    bunny.eventMode = "dynamic";
-
-    app.stage.addChild(bunny);
-
-    // gsap.to(bunny, {
-    //   pixi: {
-    //     scaleX: 2,
-    //     scaleY: 2,
-    //   },
-    //   duration: 2,
-    //   yoyo: true,
-    //   repeat: -1,
-    // });
-
-    bunny.on("pointerdown", (event) => {
-      gsap.to(bunny, {
-        pixi: {
-          scaleX: 2,
-          scaleY: 2,
-        },
-        duration: 0.2,
-      });
-    });
-    bunny.on("pointerup", (event) => {
-      gsap.to(bunny, {
-        pixi: {
-          scaleX: 1,
-          scaleY: 1,
-        },
-        duration: 0.2,
-      });
-    });
-    bunny.on("pointerleave", (event) => {
-      gsap.to(bunny, {
-        pixi: {
-          scaleX: 1,
-          scaleY: 1,
-        },
-        duration: 0.2,
-      });
-    });
-
-    return bunny;
-  };
-
-  const initDragon = async (app) => {
+  const initDragon = async (gameWorld) => {
     let resource = await PIXI.Assets.load("/dragon/dragon.json");
     const dragon = new Spine(resource.spineData);
-    app.stage.addChild(dragon);
+    gameWorld.addChild(dragon);
 
-    dragon.position.set(app.renderer.width / 2 + 50, app.renderer.height / 3);
+    dragon.pivot.set(0, 0);
     dragon.state.timeScale = 0.02;
     dragon.scale.set(0.5);
     dragon.scale.x = -0.5;
@@ -301,13 +249,137 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     );
   };
 
-  const isAbove = (bounds1, bounds2) => {
-    return (
-      bounds1.x + bounds1.width > bounds2.x &&
-      bounds1.x < bounds2.x + bounds2.width &&
-      bounds1.y + bounds1.height > bounds2.y &&
-      bounds1.y < bounds2.y + bounds2.height
-    );
+  const initScore = (app) => {
+    const scoreContainer = new PIXI.Container();
+    app.stage.addChild(scoreContainer);
+
+    // Create a style for the score text
+    const textStyle = new PIXI.TextStyle({
+      fontFamily: "Arial",
+      fontSize: 24,
+      fill: "white",
+    });
+
+    // Create the score text object
+    const scoreText = new PIXI.Text("Score: 0", textStyle);
+    scoreText.anchor.set(1, 0); // Anchor to the upper right corner
+    scoreText.position.set(app.screen.width - 10, 10); // Position in the upper right corner with a 10px margin
+    scoreContainer.addChild(scoreText);
+
+    return scoreText;
+  };
+
+  const getRandomInt = (min, max) => {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
+
+  const __initPlatforms = async (gameWorld, count = 5) => {
+    const platformWidth = 300;
+
+    let platforms = [];
+    let textureOffset = -30;
+    let xPosition = 0;
+    let yLevel = gameWorld.height - 300;
+    for (let i = 0; i < count; i++) {
+      const platform = await groundFactory(platformWidth, textureOffset);
+      gameWorld.addChild(platform);
+
+      xPosition = Math.random();
+      platform.position.set(600, yLevel);
+      platforms.push(platform);
+
+      console.log(`created platform ${i}: ${platform.getBounds()}`);
+
+      yLevel -= 200;
+    }
+
+    return platforms;
+  };
+
+  const initPlatforms = async (app, gameWorld, count = 5) => {
+    const platformWidth = 300;
+    const maxDistance = 500;
+    const yDistance = 300;
+
+    let platforms = [];
+    let textureOffset = -30;
+    let xPosition = 0;
+    let distance = 0;
+    let gameWidth = app.renderer.width;
+    let gameHeight = app.renderer.height;
+    let yLevel = gameHeight - yDistance - 100;
+    for (let i = 0; i < count; i++) {
+      const platform = await groundFactory(platformWidth, textureOffset);
+      gameWorld.addChild(platform);
+
+      xPosition = getRandomInt(platformWidth + 10, gameWidth - (platformWidth + 10));
+      if (i > 0) {
+        distance = xPosition - platforms[i - 1].x;
+        if (Math.abs(distance) > 500)
+          xPosition = distance > 0 ? platforms[i - 1].x + maxDistance : platforms[i - 1].x - maxDistance;
+      }
+      platform.position.set(xPosition, yLevel);
+      platforms.push(platform);
+
+      console.log(`created platform ${i}: ${platform.getBounds()}`);
+
+      yLevel -= yDistance;
+    }
+
+    return platforms;
+  };
+
+  let camTweenUp, camTweenDown;
+  const updateCamera = (app, gameWorld, superSpineboy) => {
+    const moveArea = Math.floor(app.renderer.height / 3);
+
+    if (superSpineboy.y > moveArea * 2 && gameWorld.y == 0) return;
+
+    let moveUp = superSpineboy.y + gameWorld.y < app.renderer.height / 2;
+    if (moveUp) {
+      // console.log(`moveUp: ${moveUp}, ssb.y: ${superSpineboy.y + gameWorld.y} < ${moveArea}`);
+      let moveTo = gameWorld.y + moveArea;
+      if (!gsap.isTweening(gameWorld)) {
+        camTweenUp = gsap.to(gameWorld, {
+          pixi: {
+            y: moveTo,
+          },
+          duration: 1,
+          ease: "power1.inOut",
+        });
+      } else console.log("already tweening gameworld");
+
+      return;
+    }
+
+    let moveDown = superSpineboy.y + gameWorld.y + 60 > moveArea * 3;
+    // if (moveDown) {
+    //   console.log(`moveDown: ${moveDown}, ssb.y: ${superSpineboy.y + gameWorld.y} > ${moveArea * 2}`);
+    //   let moveTo = gameWorld.y - moveArea;
+    //   if (!gsap.isTweening(gameWorld)) {
+    //     if (camTweenUp && camTweenUp.isActive()) camTweenUp.kill();
+    //     if (camTweenDown && camTweenDown.isActive()) {
+    //       console.log("killing camTweenDown");
+    //       camTweenDown.kill();
+    //     }
+    //     camTweenDown = gsap.to(gameWorld, {
+    //       pixi: {
+    //         y: moveTo,
+    //       },
+    //       duration: 0.5,
+    //       ease: "power1.inOut",
+    //     });
+    //   } else console.log("already tweening gameworld");
+    // }
+    if (moveDown) {
+      if (camTweenUp && camTweenUp.isActive()) camTweenUp.kill();
+      let moveSpeed = superSpineboy.vy;
+      if (moveSpeed <= 6) moveSpeed = 6;
+      gameWorld.y -= moveSpeed;
+    }
   };
 
   const gravity = 0.5;
@@ -315,16 +387,12 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     initGsap();
     const debug = document.querySelector(".debug");
     const app = await initApp();
+
     const gameWorld = new PIXI.Container();
+    // gameWorld.width = app.renderer.width;
+    // gameWorld.height = app.renderer.height;
     gameWorld.name = "gameWorld";
     app.stage.addChild(gameWorld);
-    // const bunny = await initBunny(app);
-    // const superSpineboy = await initSuperSpineboy(app, gameWorld);
-
-    // let resource = await PIXI.Assets.load("/spineboy-pro/spineboy-pro.json");
-    // const superSpineboy = new SuperSpineBoy(gameWorld, resource);
-    // gameWorld.addChild(superSpineboy);
-    // superSpineboy.position.set(app.renderer.width / 4, app.renderer.height);
 
     const superSpineboy = await initSuperSpineboy(gameWorld);
 
@@ -332,32 +400,14 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     const ground = await initGround(app, gameWorld);
     ground.name = "ground";
     platforms.push(ground);
+    platforms = platforms.concat(await initPlatforms(app, gameWorld));
 
-    const platform1 = await groundFactory(300, -30);
-    gameWorld.addChild(platform1);
-    platform1.position.set(600, app.renderer.height - 300);
-    platforms.push(platform1);
-
-    const platform2 = await groundFactory(300, -400);
-    gameWorld.addChild(platform2);
-    platform2.position.set(200, app.renderer.height - 500);
-    platforms.push(platform2);
-
-    const platform3 = await groundFactory(300, -200);
-    gameWorld.addChild(platform3);
-    platform3.position.set(800, app.renderer.height - 700);
-    platforms.push(platform3);
-
-    const platform4 = await groundFactory(300, -200);
-    gameWorld.addChild(platform4);
-    platform4.position.set(300, app.renderer.height - 900);
-    platforms.push(platform4);
-
-    // const dragon = await initDragon(app);
+    const dragon = await initDragon(gameWorld);
+    dragon.position.set(app.renderer.width, 300);
 
     // // for testing collisions
     // const graphics = new PIXI.Graphics();
-    // graphics.beginFill(0xff0000); // Red color
+    // graphics.beginFill(0xff0000, 0.5); // Red color
     // graphics.drawRect(0, 0, 50, 5); // Adjust the radius as needed
     // graphics.endFill();
     // gameWorld.addChild(graphics);
@@ -368,6 +418,13 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     });
     debugText.position.set(10, 10);
     app.stage.addChild(debugText);
+
+    let score = 0;
+    let scoreText = initScore(app);
+    let updateScore = (newScore) => {
+      score = newScore;
+      scoreText.text = `Score: ${score}`;
+    };
 
     initEvents(app);
     window.addEventListener("resize", async () => {
@@ -422,6 +479,21 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
         // p.x += 1;
       }
 
+      bounds2 = dragon.getBounds();
+      bounds2.height -= 150;
+      bounds2.x += 60;
+      bounds2.width -= 130;
+      bounds2.y += 30;
+      if (isCollision(bounds1, bounds2)) {
+        updateScore(score - 1);
+        superSpineboy.x += -10;
+      }
+
+      // graphics.x = bounds2.x;
+      // graphics.y = bounds2.y;
+      // graphics.width = bounds2.width;
+      // graphics.height = bounds2.height;
+
       // if (!superSpineboy.onground) {
       //   superSpineboy.vy += gravity;
       //   aboveGround = superSpineboy.y + 100;
@@ -430,33 +502,11 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
 
       // console.log(`vy: ${superSpineboy.vy}, y: ${superSpineboy.y}`);
 
-      if (superSpineboy.y < 500 && gameWorld.y == 0) {
-        console.log("move up");
-        gsap.to(gameWorld, {
-          pixi: {
-            y: 200,
-          },
-          duration: 2,
-          ease: "power1.inOut",
-        });
-      }
-
-      if (superSpineboy.y < 0 && gameWorld.y == 200) {
-        console.log("move up");
-        gsap.to(gameWorld, {
-          pixi: {
-            y: 400,
-          },
-          duration: 2,
-          ease: "power1.inOut",
-        });
-      }
+      updateCamera(app, gameWorld, superSpineboy);
 
       tempText = `app - width:${app.renderer.width}, height:${app.renderer.height}\n`;
       tempText += `gameWorld - x:${gameWorld.x}, y:${gameWorld.y}, width:${gameWorld.width}, height:${gameWorld.height}\n`;
       tempText += `ground - x:${ground.x}, y:${ground.y}\n`;
-      tempText += `platform1 - x:${platform1.x}, y:${platform1.y}\n`;
-      tempText += `platform2 - x:${platform2.x}, y:${platform2.y}`;
       tempText += `\naboveGround:${aboveGround}`;
       tempText += `\nsuperSpineboy - \nx:${superSpineboy.x}, y:${superSpineboy.y}`;
       // tempText += `\nwidth: ${superSpineboy.width}, height: ${superSpineboy.height}`;
@@ -473,10 +523,9 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
       // graphics.x = superSpineboy.x;
       // graphics.y = superSpineboy.y;
 
-      // bunny.rotation += 0.01;
-      // dragon.update(dt);
-      // dragon.x -= 10;
-      // if (dragon.x < -200) dragon.x = 2100;
+      dragon.update(dt);
+      dragon.x -= 10;
+      if (dragon.x < -200) dragon.x = gameWorld.width + 200;
 
       if (superSpineboy.x > window.innerWidth + 20) superSpineboy.x = -49;
       if (superSpineboy.x < -50) superSpineboy.x = window.innerWidth + 19;
