@@ -55,19 +55,23 @@ export default class SuperSpineboy extends Spine {
     this.running = false;
     this.aiming = false;
     this.onground = false;
+    this.isReady = true;
+    this.health = 100;
   }
 
   face(direction) {
+    if (!this.isReady) return;
     this.facingRight = direction === this.DIR_RIGHT;
     if (this.facingRight) this.scale.x = this.SCALE;
     else this.scale.x = -this.SCALE;
   }
 
   canJump() {
-    return !this.jumping && this.onground;
+    return this.isReady && !this.jumping && this.onground;
   }
 
   jump(jumpForce = this.JUMP_FORCE) {
+    if (!this.isReady) return;
     if (this.jumping) return;
     if (this.canJump()) {
       console.log("jump");
@@ -79,6 +83,7 @@ export default class SuperSpineboy extends Spine {
   }
 
   move(direction) {
+    if (!this.isReady) return;
     if (this.moving) return;
     this.moving = true;
     if (direction) this.face(direction);
@@ -87,6 +92,7 @@ export default class SuperSpineboy extends Spine {
   }
 
   walk() {
+    if (!this.isReady) return;
     if (this.onground) {
       this.state.setAnimation(0, this.ANIM_WALK, true);
       if (this.gsap) {
@@ -116,6 +122,7 @@ export default class SuperSpineboy extends Spine {
   }
 
   stopRunning() {
+    if (!this.isReady) return;
     if (this.moving) {
       this.walk();
     }
@@ -123,28 +130,34 @@ export default class SuperSpineboy extends Spine {
   }
 
   hover() {
-    this.setAnimation(0, ANIM_HOVER, true);
+    if (!this.isReady) return;
+    this.state.setAnimation(0, ANIM_HOVER, true);
   }
 
   die() {
-    this.setAnimation(0, ANIM_DEATH, false);
+    this.isReady = false;
+    this.state.setAnimation(0, this.ANIM_DEATH, false);
   }
 
   respawn() {
+    this.isReady = false;
     this.state.setAnimation(0, "portal", false);
     this.state.addAnimation(0, "idle", true, 0);
   }
 
   aim() {
+    if (!this.isReady) return;
     this.aiming = true;
     this.state.setAnimation(1, ANIM_AIM, false);
   }
 
   shoot() {
+    if (!this.isReady) return;
     this.state.setAnimation(2, "shoot", false);
   }
 
   hitGround() {
+    if (!this.isReady) return;
     this.onground = true;
     if (!this.moving) this.stop();
     else {
@@ -155,7 +168,7 @@ export default class SuperSpineboy extends Spine {
   }
 
   stop() {
-    // console.log("stopping...");
+    if (!this.isReady) return;
     this.moving = false;
     if (this.onground && this.state.tracks[0].animation.name !== this.ANIM_IDLE) {
       this.state.setAnimation(0, this.ANIM_IDLE, true);
