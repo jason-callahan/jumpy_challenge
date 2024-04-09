@@ -181,4 +181,8 @@ export default class SuperSpineboy extends Spine {
       }
     }
   }
+
+  update(dt) {
+    super.update(dt);
+  }
 }

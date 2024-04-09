@@ -4,6 +4,7 @@ import { gsap } from "gsap";
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { Spine } from "pixi-spine";
 import SuperSpineboy from "./superspineboy/SuperSpineboy";
+import Dragon from "./dragon/Dragon";
 
 (async () => {
   console.log(PIXI.VERSION);
@@ -37,21 +38,21 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     return app;
   };
 
-  const initDragon = async (gameWorld) => {
-    let resource = await PIXI.Assets.load("/dragon/dragon.json");
-    const dragon = new Spine(resource.spineData);
-    gameWorld.addChild(dragon);
+  // const initDragon = async (gameWorld, scale) => {
+  //   let resource = await PIXI.Assets.load("/dragon/dragon.json");
+  //   const dragon = new Spine(resource.spineData);
+  //   gameWorld.addChild(dragon);
 
-    dragon.pivot.set(0, 0);
-    dragon.state.timeScale = 0.02;
-    dragon.scale.set(0.25);
-    dragon.scale.x = -0.25;
-    dragon.eventMode = "dynamic";
+  //   dragon.pivot.set(0, 0);
+  //   dragon.state.timeScale = 0.02;
+  //   dragon.scale.set(0.25);
+  //   dragon.scale.x = -0.25;
+  //   dragon.eventMode = "dynamic";
 
-    dragon.state.setAnimation(0, "flying", true);
+  //   dragon.state.setAnimation(0, "flying", true);
 
-    return dragon;
-  };
+  //   return dragon;
+  // };
 
   const initEvents = (app) => {
     const gameWorld = app.stage.getChildByName("gameWorld");
@@ -59,7 +60,7 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     const ground = gameWorld.getChildByName("ground");
 
     document.addEventListener("keydown", (event) => {
-      console.log(event);
+      // console.log(event);
       if (event.code === KeyCode.JUMP) superSpineboy.jump();
       if (event.code === KeyCode.MOVE_RIGHT) superSpineboy.move(superSpineboy.DIR_RIGHT);
       if (event.code === KeyCode.MOVE_LEFT) superSpineboy.move(superSpineboy.DIR_LEFT);
@@ -69,7 +70,7 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     });
 
     document.addEventListener("keyup", (event) => {
-      console.log(event);
+      // console.log(event);
       if ([KeyCode.MOVE_LEFT, KeyCode.MOVE_RIGHT].includes(event.code)) superSpineboy.stop();
       if (event.code === KeyCode.RUN) superSpineboy.stopRunning();
     });
@@ -96,144 +97,6 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     return superSpineboy;
   };
 
-  const _initSuperSpineboy = async (superSpineboy, app, gameWorld) => {
-    let resource = await PIXI.Assets.load("/spineboy-pro/spineboy-pro.json");
-
-    let aiming = false;
-    let jumpForce = -15;
-    superSpineboy["vy"] = 0;
-    superSpineboy["vx"] = 0;
-    superSpineboy["walking"] = false;
-    superSpineboy["jumping"] = false;
-    document.addEventListener("keydown", (event) => {
-      event.preventDefault = true;
-      // console.log("keydown: ", event);
-
-      if (event.code == "Space") {
-        if (!superSpineboy["jumping"] && superSpineboy.vy <= 0) {
-          superSpineboy["jumping"] = true;
-          superSpineboy.state.setAnimation(0, "jump", false);
-          superSpineboy.vy += jumpForce;
-          console.log("jump: " + superSpineboy.vy);
-          // superSpineboy.state.addAnimation(0, "idle", true, 0);
-          // gsap.to(superSpineboy, {
-          //   pixi: {
-          //     y: "-=200",
-          //   },
-          //   duration: 0.5,
-          // });
-        }
-      }
-
-      if (event.key === "ArrowRight") {
-        flip("right");
-        if (!superSpineboy["walking"]) {
-          superSpineboy["walking"] = true;
-          superSpineboy.vx = 5;
-          superSpineboy.state.setAnimation(0, "walk", true);
-        }
-      }
-
-      if (event.key === "h") {
-        superSpineboy.state.setAnimation(0, "hoverboard", true);
-      }
-
-      if (event.key === "d") {
-        superSpineboy.state.setAnimation(0, "death", false);
-      }
-
-      if (event.key === "p") {
-        superSpineboy.state.setAnimation(0, "portal", false);
-        superSpineboy.state.addAnimation(0, "idle", true, 0);
-      }
-
-      if (event.key === "ArrowLeft") {
-        flip("left");
-        if (!superSpineboy["walking"]) {
-          superSpineboy["walking"] = true;
-          superSpineboy.vx = -5;
-          superSpineboy.state.setAnimation(0, "walk", true);
-        }
-      }
-
-      if (event.key == "a") {
-        if (!aiming) {
-          aiming = true;
-          superSpineboy.state.setAnimation(1, "aim", false);
-        } // else {
-        //   aimBone.y += 1;
-        // }
-      }
-
-      if (event.key === "f") {
-        superSpineboy.state.setAnimation(2, "shoot", false);
-        // superSpineboy.state.addEmptyAnimation(2, 0.5, 0.1);
-      }
-    });
-
-    document.addEventListener("keyup", (event) => {
-      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-        superSpineboy["walking"] = false;
-        superSpineboy.vx = 0;
-        superSpineboy.state.setAnimation(0, "idle", true);
-      }
-
-      if (event.code == "Space") {
-        superSpineboy["jumping"] = false;
-      }
-
-      if (event.key == "a") {
-        aiming = false;
-        superSpineboy.state.addEmptyAnimation(1, 0.2, 0.1);
-      }
-    });
-
-    const getMousePosition = (event) => {
-      const rect = app.view.getBoundingClientRect();
-      return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      };
-    };
-
-    const transformToLocalSpace = (globalPosition, spineAnimation) => {
-      const globalPoint = new PIXI.Point(globalPosition.x, globalPosition.y);
-      const inverseMatrix = spineAnimation.worldTransform.clone().invert();
-      const localPoint = inverseMatrix.apply(globalPoint);
-
-      return {
-        x: localPoint.x,
-        y: -localPoint.y,
-      };
-    };
-
-    app.view.eventMode = "dynamic";
-    app.view.addEventListener("pointermove", (event) => {
-      const mousePosition = getMousePosition(event);
-      const localPosition = transformToLocalSpace(mousePosition, superSpineboy);
-
-      aimBone.x = localPosition.x;
-      aimBone.y = localPosition.y;
-    });
-
-    superSpineboy.state.addListener({
-      complete: (trackEntry, loopCount) => {
-        // console.log(trackEntry);
-        // console.log(superSpineboy["walking"]);
-        if (trackEntry.animation.name == "jump") {
-          superSpineboy["jumping"] = false;
-          if (superSpineboy["walking"]) {
-            superSpineboy.state.setAnimation(0, "walk", true);
-          } else {
-            superSpineboy.state.setAnimation(0, "idle", true);
-          }
-        }
-      },
-    });
-
-    return superSpineboy;
-  };
-
   const groundFactory = async (width, offset = 0) => {
     let resource = await PIXI.Assets.load("/iP4_ground_half.png");
     const ground = new PIXI.TilingSprite(resource, width, resource.height);
@@ -248,16 +111,6 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     ground.position.set(-50, app.renderer.height - ground.height);
 
     return ground;
-  };
-
-  const _initGoal = async (app, gameWorld) => {
-    let resource = await PIXI.Assets.load("/star.png");
-    const goal = new PIXI.Sprite(resource);
-    goal.name = "goal";
-    goal.anchor.set(0.5);
-    gameWorld.addChild(goal);
-
-    return goal;
   };
 
   const initGoal = async (app, gameWorld) => {
@@ -275,7 +128,6 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     goal.name = "goal";
     goal.loop = true;
     goal.anchor.set(0.5);
-    gameWorld.addChild(goal);
     goal.play();
 
     return goal;
@@ -330,6 +182,7 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     for (let i = 0; i < count; i++) {
       const platform = await groundFactory(platformWidth, textureOffset);
       platform.name = `p${platforms.length + 1}`;
+      platform.zIndex = 0;
       gameWorld.addChild(platform);
 
       xPosition = getRandomInt(platformWidth + 10, gameWidth - (platformWidth + 10));
@@ -382,75 +235,23 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     }
   };
 
-  const initLevel = (level) => {};
-
   const gravity = 0.5;
   window.onload = async () => {
     initGsap();
     const debug = document.querySelector(".debug");
     const app = await initApp();
 
-    let hitPlatforms = ["p0"];
-
     const gameWorld = new PIXI.Container();
     gameWorld.name = "gameWorld";
+    gameWorld.sortableChildren = true;
     app.stage.addChild(gameWorld);
 
-    // *** Init platforms *** //
-    var platforms = [];
-    const ground = await initGround(app, gameWorld);
-    ground.name = "ground";
-    platforms.push(ground);
-    platforms = platforms.concat(await initPlatforms(app, gameWorld, 10));
-
-    // *** Init Goal ** //
-    const goal = await initGoal(app, gameWorld);
-    let lastPlatform = platforms[platforms.length - 1];
-    let goalX = lastPlatform.x + lastPlatform.width / 2;
-    let goalY = platforms[platforms.length - 1].y - 500;
-    goal.scale.set(0.75);
-    goal.animationSpeed = 0.4;
-    goal.position.set(goalX, goalY);
-
-    // *** Init SuperSpineboy *** //
-    const superSpineboy = await initSuperSpineboy();
-    superSpineboy.position.set(200, app.renderer.height - ground.height + 30);
-    superSpineboy.respawn();
-    superSpineboy.state.addListener({
-      complete: (trackIndex, loopCount) => {
-        var animationName = superSpineboy.state.tracks[0].animation.name;
-        // console.log(`${animationName} ended`);
-
-        if (animationName === superSpineboy.ANIM_PORTAL) {
-          superSpineboy.isReady = true;
-        }
-
-        if (animationName === superSpineboy.ANIM_DEATH) {
-          superSpineboy.respawn();
-          superSpineboy.health = 100;
-          updateHealth(superSpineboy.health);
-        }
-      },
-    });
-    gameWorld.addChild(superSpineboy);
-
-    // *** Init dragons *** //
-    let dragons = [];
-    let dragonCount = 1;
-    for (let i = 0; i < dragonCount; i++) {
-      const dragon = await initDragon(gameWorld);
-      dragon.position.set(app.renderer.width, 300);
-      dragons.push(dragon);
-    }
-
-    initEvents(app);
-
     // // *** Collision testing *** //
-    // const graphics = new PIXI.Graphics();
-    // graphics.beginFill(0xff0000, 0.5); // Red color
-    // graphics.drawRect(0, 0, 50, 5); // Adjust the radius as needed
-    // graphics.endFill();
-    // gameWorld.addChild(graphics);
+    const graphics = new PIXI.Graphics();
+    graphics.beginFill(0xff0000, 0.5); // Red color
+    graphics.drawRect(0, 0, 50, 5); // Adjust the radius as needed
+    graphics.endFill();
+    gameWorld.addChild(graphics);
 
     // *** Debug text *** //
     let debugText = new PIXI.Text("debugging...", {
@@ -459,6 +260,89 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     });
     debugText.position.set(10, 10);
     app.stage.addChild(debugText);
+
+    let dragons = [];
+    let platforms = [];
+    let hitPlatforms = ["p0"];
+
+    // *** Init ground *** //
+    const ground = await initGround(app, gameWorld);
+    ground.name = "ground";
+    ground.zIndex = 0;
+    platforms.push(ground);
+
+    // *** Init Goal ** //
+    const goal = await initGoal(app, gameWorld);
+
+    // *** Init SuperSpineboy *** //
+    const superSpineboy = await initSuperSpineboy();
+    gameWorld.addChild(superSpineboy);
+    superSpineboy.zIndex = 1;
+
+    const setupGame = async (level) => {
+      // *** Init platforms *** //
+      let platformCount = 10 + level;
+      let newPlatforms = [];
+      hitPlatforms = ["p0"];
+      platforms.forEach((p) => (p.name != "ground" ? gameWorld.removeChild(p) : newPlatforms.push(p)));
+      platforms = newPlatforms;
+      platforms = platforms.concat(await initPlatforms(app, gameWorld, platformCount));
+
+      // *** Init dragons *** //
+      let dragonCount = level;
+      let dragonY = 500;
+      let newDragons = [];
+      let resource = await PIXI.Assets.load("/dragon/dragon.json");
+      dragons.forEach((d) => gameWorld.removeChild(d));
+      for (let i = 0; i < dragonCount; i++) {
+        // const dragon = await initDragon(gameWorld);
+        const dragon = new Dragon(resource);
+        if (i % 2 == 1) dragon.face(dragon.DIR_RIGHT);
+        gameWorld.addChild(dragon);
+        dragon.zIndex = 2;
+        dragon.position.set(getRandomInt(0, app.renderer.width), getRandomInt(500, dragonY));
+        console.log(`created dragon at`);
+        dragonY -= 500;
+        newDragons.push(dragon);
+      }
+      dragons = newDragons;
+
+      // *** Init goal *** //
+      let lastPlatform = platforms[platforms.length - 1];
+      let goalX = lastPlatform.x + lastPlatform.width / 2;
+      let goalY = platforms[platforms.length - 1].y - 500;
+      goal.scale.set(0.75);
+      goal.animationSpeed = 0.4;
+      goal.position.set(goalX, goalY);
+      gameWorld.addChild(goal);
+
+      // *** Init SuperSpineboy *** //
+      superSpineboy.position.set(200, app.renderer.height - ground.height + 30);
+      superSpineboy.alpha = 1;
+      superSpineboy.respawn();
+      superSpineboy.state.addListener({
+        complete: (trackIndex, loopCount) => {
+          var animationName = superSpineboy.state.tracks[0].animation.name;
+          // console.log(`${animationName} ended`);
+
+          if (animationName === superSpineboy.ANIM_PORTAL) {
+            superSpineboy.isReady = true;
+          }
+
+          if (animationName === superSpineboy.ANIM_DEATH) {
+            superSpineboy.respawn();
+            superSpineboy.health = 100;
+            updateHealth(superSpineboy.health);
+          }
+        },
+      });
+
+      gameWorld.y = 0;
+    };
+
+    await setupGame(1);
+
+    initEvents(app);
 
     // *** Game HUD *** //
     let score = 0;
@@ -494,20 +378,6 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
     };
     updateLevel(level);
 
-    // let dragons = [];
-
-    // const setupGame = async (level) => {
-    //   // *** Init dragons *** //
-    //   let dragonCount = 1;
-    //   for (let i = 0; i < dragonCount; i++) {
-    //     const dragon = await initDragon(gameWorld);
-    //     dragon.position.set(app.renderer.width, 300);
-    //     dragons.push(dragon);
-    //   }
-    // }
-
-    // setupGame(1);
-
     // *** Loop vars *** //
     let tempText = "";
     let aboveGround = superSpineboy.y - 50;
@@ -527,6 +397,7 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
           pixi: {
             rotation: "+=720",
             scale: 30,
+            alpha: 0,
           },
           duration: 1,
           onComplete: () => {
@@ -536,7 +407,15 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
             goal.gotoAndPlay(0);
             winTween.kill();
             winTween = null;
+            goal.alpha = 1;
+            setupGame(level);
           },
+        });
+        gsap.to(superSpineboy, {
+          pixi: {
+            alpha: 0,
+          },
+          duration: 1,
         });
         return;
       }
@@ -552,12 +431,14 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
 
         // *** Platforms collision *** //
         bounds1 = superSpineboy.getBounds();
+        bounds1.y += gameWorld.y;
         bounds1.width -= 60;
         bounds1.x += 30;
         for (let i = 0; i < platforms.length; i++) {
           let p = platforms[i];
           let py = p.y + 30;
           bounds2 = p.getBounds();
+          bounds2.y += gameWorld.y;
           bounds2.y += 30;
           if (superSpineboy.vy > 0 && aboveGround < py && isCollision(bounds1, bounds2)) {
             superSpineboy.vy = 0;
@@ -581,10 +462,17 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
           for (let i = 0; i < dragons.length; i++) {
             let dragon = dragons[i];
             bounds2 = dragon.getBounds();
-            bounds2.height -= 150;
-            bounds2.x += 60;
-            bounds2.width -= 130;
-            bounds2.y += 30;
+            bounds2.y += gameWorld.y;
+
+            // bounds2.height -= 150;
+            // bounds2.x += 60;
+            // bounds2.width -= 130;
+
+            bounds2.height *= 0.6;
+            bounds2.width *= 0.7;
+            bounds2.x += bounds2.width * 0.2;
+            bounds2.y += bounds2.height * 0.1;
+
             if (isCollision(bounds1, bounds2)) {
               superSpineboy.health -= 1;
               newPoints -= 1;
@@ -595,15 +483,29 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
               updateHealth(superSpineboy.health);
               superSpineboy.x += -10;
               superSpineboy.tint = 0xff0000;
+              console.log(`spineboy: ${bounds1}, dragon: ${bounds2}`);
             }
 
-            dragon.x -= 5;
-            if (dragon.x < -200) dragon.x = gameWorld.width + 200;
+            // dragon.x -= 5;
+            // if (dragon.x < -200) dragon.x = app.renderer.width + 200;
+            // dragon.update(dt);
+
             dragon.update(dt);
+            if (dragon.facingRight) {
+              if (dragon.x > app.renderer.width + 200) dragon.x = -200;
+            } else {
+              if (dragon.x < -200) dragon.x = app.renderer.width + 200;
+            }
           }
+
+          // graphics.x = bounds2.x;
+          // graphics.y = bounds2.y;
+          // graphics.width = bounds2.width;
+          // graphics.height = bounds2.height;
 
           // *** Star collision *** //
           bounds2 = goal.getBounds();
+          bounds2.y += gameWorld.y;
           if (!win && isCollision(bounds1, bounds2)) {
             win = true;
             updateScore(score + points);
@@ -625,8 +527,6 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
       if (!superSpineboy.isReady) {
         for (let i = 0; i < dragons.length; i++) {
           let dragon = dragons[i];
-          dragon.x -= 5;
-          if (dragon.x < -200) dragon.x = gameWorld.width + 200;
           dragon.update(dt);
         }
       }
@@ -659,9 +559,13 @@ import SuperSpineboy from "./superspineboy/SuperSpineboy";
       tempText += `\nfrontFootTip: ${superSpineboy.frontFootTipBone.y}`;
       // tempText += `\nbounds: ${bounds1}`;
       tempText += `\nanimation: ${superSpineboy.state.tracks[0].animation.name}`;
+      // tempText += `${superSpineboy.getBounds()}`;
 
-      // tempText += `\n\n - dragon - `;
-      // tempText += `\nx:${dragon.x}, y:${dragon.y}`;
+      tempText += `\n\n -- dragons ${dragons.length} -- `;
+      for (let i = 0; i < dragons.length; i++) {
+        tempText += `\n - dragon - `;
+        tempText += `\nx:${dragons[i].x}, y:${dragons[i].y}`;
+      }
 
       tempText += `\n\nstage: ${app.stage.children.length}, gameWorld: ${gameWorld.children.length}, platforms: ${platforms.length}`;
       debugText.text = tempText;
