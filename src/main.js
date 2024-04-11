@@ -57,7 +57,7 @@ import Dragon from "./dragon/Dragon";
   const initEvents = (app) => {
     const gameWorld = app.stage.getChildByName("gameWorld");
     const superSpineboy = gameWorld.getChildByName("superSpineboy");
-    const ground = gameWorld.getChildByName("ground");
+    let ground = gameWorld.getChildByName("ground");
 
     document.addEventListener("keydown", (event) => {
       // console.log(event);
@@ -247,14 +247,14 @@ import Dragon from "./dragon/Dragon";
     app.stage.addChild(gameWorld);
 
     // // *** Collision testing *** //
-    const graphics = new PIXI.Graphics();
-    graphics.beginFill(0xff0000, 0.5); // Red color
-    graphics.drawRect(0, 0, 50, 5); // Adjust the radius as needed
-    graphics.endFill();
-    gameWorld.addChild(graphics);
+    // const graphics = new PIXI.Graphics();
+    // graphics.beginFill(0xff0000, 0.5); // Red color
+    // graphics.drawRect(0, 0, 50, 5); // Adjust the radius as needed
+    // graphics.endFill();
+    // gameWorld.addChild(graphics);
 
     // *** Debug text *** //
-    let debugText = new PIXI.Text("debugging...", {
+    let debugText = new PIXI.Text("Super Spineboy", {
       fill: "white",
       fontSize: 16,
     });
@@ -545,30 +545,30 @@ import Dragon from "./dragon/Dragon";
       // graphics.x = superSpineboy.x;
       // graphics.y = superSpineboy.y;
 
-      tempText = `app - width:${app.renderer.width}, height:${app.renderer.height}`;
-      tempText += `\ngameWorld - x:${gameWorld.x}, y:${gameWorld.y}, width:${gameWorld.width}, height:${gameWorld.height}`;
-      tempText += `\nground - x:${ground.x}, y:${ground.y}`;
-      tempText += `\naboveGround:${aboveGround}`;
-      tempText += `\n\n - superSpineboy - `;
-      tempText += `\nhealth: ${superSpineboy.health}`;
-      tempText += `\nx:${superSpineboy.x}, y:${superSpineboy.y}`;
-      tempText += `\nReady: ${superSpineboy.isReady}`;
-      // tempText += `\nwidth: ${superSpineboy.width}, height: ${superSpineboy.height}`;
-      tempText += `\nvx:${superSpineboy.vx}, vy:${superSpineboy.vy}`;
-      tempText += `\nmoving: ${superSpineboy.moving}, running: ${superSpineboy.running}, jumping: ${superSpineboy.jumping}, onground: ${superSpineboy.onground}`;
-      tempText += `\nfrontFootTip: ${superSpineboy.frontFootTipBone.y}`;
-      // tempText += `\nbounds: ${bounds1}`;
-      tempText += `\nanimation: ${superSpineboy.state.tracks[0].animation.name}`;
-      // tempText += `${superSpineboy.getBounds()}`;
+      // tempText = `app - width:${app.renderer.width}, height:${app.renderer.height}`;
+      // tempText += `\ngameWorld - x:${gameWorld.x}, y:${gameWorld.y}, width:${gameWorld.width}, height:${gameWorld.height}`;
+      // tempText += `\nground - x:${ground.x}, y:${ground.y}`;
+      // tempText += `\naboveGround:${aboveGround}`;
+      // tempText += `\n\n - superSpineboy - `;
+      // tempText += `\nhealth: ${superSpineboy.health}`;
+      // tempText += `\nx:${superSpineboy.x}, y:${superSpineboy.y}`;
+      // tempText += `\nReady: ${superSpineboy.isReady}`;
+      // // tempText += `\nwidth: ${superSpineboy.width}, height: ${superSpineboy.height}`;
+      // tempText += `\nvx:${superSpineboy.vx}, vy:${superSpineboy.vy}`;
+      // tempText += `\nmoving: ${superSpineboy.moving}, running: ${superSpineboy.running}, jumping: ${superSpineboy.jumping}, onground: ${superSpineboy.onground}`;
+      // tempText += `\nfrontFootTip: ${superSpineboy.frontFootTipBone.y}`;
+      // // tempText += `\nbounds: ${bounds1}`;
+      // tempText += `\nanimation: ${superSpineboy.state.tracks[0].animation.name}`;
+      // // tempText += `${superSpineboy.getBounds()}`;
 
-      tempText += `\n\n -- dragons ${dragons.length} -- `;
-      for (let i = 0; i < dragons.length; i++) {
-        tempText += `\n - dragon - `;
-        tempText += `\nx:${dragons[i].x}, y:${dragons[i].y}`;
-      }
+      // tempText += `\n\n -- dragons ${dragons.length} -- `;
+      // for (let i = 0; i < dragons.length; i++) {
+      //   tempText += `\n - dragon - `;
+      //   tempText += `\nx:${dragons[i].x}, y:${dragons[i].y}`;
+      // }
 
-      tempText += `\n\nstage: ${app.stage.children.length}, gameWorld: ${gameWorld.children.length}, platforms: ${platforms.length}`;
-      debugText.text = tempText;
+      // tempText += `\n\nstage: ${app.stage.children.length}, gameWorld: ${gameWorld.children.length}, platforms: ${platforms.length}`;
+      // debugText.text = tempText;
     });
   };
 })();
