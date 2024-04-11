@@ -76,7 +76,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
   };
 
   const initSuperSpineboy = async () => {
-    let resource = await PIXI.Assets.load("/assets/spineboy-pro/spineboy-pro.json");
+    let resource = await PIXI.Assets.load("assets/spineboy-pro/spineboy-pro.json");
     const superSpineboy = new SuperSpineboy(resource);
     superSpineboy.gsap = gsap;
 
@@ -282,7 +282,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
       let dragonCount = level;
       let dragonY = 500;
       let newDragons = [];
-      let resource = await PIXI.Assets.load("/assets/dragon/dragon.json");
+      let resource = await PIXI.Assets.load("assets/dragon/dragon.json");
       dragons.forEach((d) => gameWorld.removeChild(d));
       for (let i = 0; i < dragonCount; i++) {
         // const dragon = await initDragon(gameWorld);
