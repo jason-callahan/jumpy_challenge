@@ -3,8 +3,14 @@ import * as PIXI from "pixi.js";
 import { gsap } from "gsap";
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { Spine } from "pixi-spine";
-import SuperSpineboy from "./superspineboy/SuperSpineboy";
-import Dragon from "./dragon/Dragon";
+import SuperSpineboy from "/src/superspineboy/SuperSpineboy";
+import Dragon from "/src/dragon/Dragon";
+
+// import spineboyJson from "/assets/spineboy-pro/spineboy-pro.json";
+// import dragonJson from "/assets/dragon/dragon.json";
+
+import groundPng from "/assets/iP4_ground_half.png";
+import starPng from "/assets/star_sprite_sheet_2d_128px.png";
 
 (async () => {
   console.log(PIXI.VERSION);
@@ -38,22 +44,6 @@ import Dragon from "./dragon/Dragon";
     return app;
   };
 
-  // const initDragon = async (gameWorld, scale) => {
-  //   let resource = await PIXI.Assets.load("/dragon/dragon.json");
-  //   const dragon = new Spine(resource.spineData);
-  //   gameWorld.addChild(dragon);
-
-  //   dragon.pivot.set(0, 0);
-  //   dragon.state.timeScale = 0.02;
-  //   dragon.scale.set(0.25);
-  //   dragon.scale.x = -0.25;
-  //   dragon.eventMode = "dynamic";
-
-  //   dragon.state.setAnimation(0, "flying", true);
-
-  //   return dragon;
-  // };
-
   const initEvents = (app) => {
     const gameWorld = app.stage.getChildByName("gameWorld");
     const superSpineboy = gameWorld.getChildByName("superSpineboy");
@@ -86,7 +76,7 @@ import Dragon from "./dragon/Dragon";
   };
 
   const initSuperSpineboy = async () => {
-    let resource = await PIXI.Assets.load("/spineboy-pro/spineboy-pro.json");
+    let resource = await PIXI.Assets.load("/assets/spineboy-pro/spineboy-pro.json");
     const superSpineboy = new SuperSpineboy(resource);
     superSpineboy.gsap = gsap;
 
@@ -98,7 +88,7 @@ import Dragon from "./dragon/Dragon";
   };
 
   const groundFactory = async (width, offset = 0) => {
-    let resource = await PIXI.Assets.load("/iP4_ground_half.png");
+    let resource = await PIXI.Assets.load(groundPng);
     const ground = new PIXI.TilingSprite(resource, width, resource.height);
     ground.tilePosition.x = offset;
     return ground;
@@ -114,7 +104,7 @@ import Dragon from "./dragon/Dragon";
   };
 
   const initGoal = async (app, gameWorld) => {
-    const resource = await PIXI.Assets.load("/star_sprite_sheet_2d_128px.png");
+    const resource = await PIXI.Assets.load(starPng);
 
     // load each sprite sheet cell as an animation frame
     const textures = [];
@@ -292,7 +282,7 @@ import Dragon from "./dragon/Dragon";
       let dragonCount = level;
       let dragonY = 500;
       let newDragons = [];
-      let resource = await PIXI.Assets.load("/dragon/dragon.json");
+      let resource = await PIXI.Assets.load("/assets/dragon/dragon.json");
       dragons.forEach((d) => gameWorld.removeChild(d));
       for (let i = 0; i < dragonCount; i++) {
         // const dragon = await initDragon(gameWorld);

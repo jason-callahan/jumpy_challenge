@@ -6,6 +6,9 @@ npx vite - runs the development environment
 ## build
 npx vite build
 
+## deploy to github pages
+git subtree push --prefix dist origin gh-pages
+
 #### to debug in vscode
 after starting the dev server with "npx vite" command, start debugger with F5. 
 
