@@ -249,6 +249,10 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
       fontSize: 16,
     });
     debugText.position.set(10, 10);
+    debugText.text += "\n\nspacebar: jump";
+    debugText.text += "\narrow-left: walk left";
+    debugText.text += "\narrow-right: walk right";
+    debugText.text += "\nhold 'X' (with right/left arrow): run";
     app.stage.addChild(debugText);
 
     let dragons = [];
@@ -370,6 +374,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
 
     // *** Loop vars *** //
     let tempText = "";
+    let helpText = "";
     let aboveGround = superSpineboy.y - 50;
     let bounds1, bounds2;
     let isDead = superSpineboy.health <= 0;
