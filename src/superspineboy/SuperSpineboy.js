@@ -57,6 +57,7 @@ export default class SuperSpineboy extends Spine {
     this.onground = false;
     this.isReady = true;
     this.health = 100;
+    this.lives = 3;
   }
 
   face(direction) {
@@ -135,6 +136,7 @@ export default class SuperSpineboy extends Spine {
   }
 
   die() {
+    this.lives--;
     this.isReady = false;
     this.state.setAnimation(0, this.ANIM_DEATH, false);
   }

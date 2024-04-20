@@ -20,8 +20,8 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     static MOVE_RIGHT = "ArrowRight";
     static MOVE_LEFT = "ArrowLeft";
     static RUN = "KeyX";
-    static SHOOT = "Shift";
-    static RESPAWN = "KeyR";
+    // static SHOOT = "Shift";
+    // static RESPAWN = "KeyR";
   }
 
   const initGsap = async () => {
@@ -55,8 +55,8 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
       if (event.code === KeyCode.MOVE_RIGHT) superSpineboy.move(superSpineboy.DIR_RIGHT);
       if (event.code === KeyCode.MOVE_LEFT) superSpineboy.move(superSpineboy.DIR_LEFT);
       if (event.code === KeyCode.RUN) superSpineboy.run();
-      if (event.key === KeyCode.SHOOT) superSpineboy.shoot();
-      if (event.code === KeyCode.RESPAWN) superSpineboy.respawn();
+      // if (event.key === KeyCode.SHOOT) superSpineboy.shoot();
+      // if (event.code === KeyCode.RESPAWN) superSpineboy.respawn();
     });
 
     document.addEventListener("keyup", (event) => {
@@ -69,7 +69,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
       app.renderer.resize(window.innerWidth, window.innerHeight);
       gameWorld.removeChild(ground);
       ground = await initGround(app, gameWorld);
-      platforms[0] = ground;
+      // platforms[0] = ground;
       superSpineboy.y = app.renderer.height - 200;
       superSpineboy.vy = 0;
     });
@@ -144,7 +144,28 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     });
 
     const text = new PIXI.Text(`${title}: 0`, textStyle);
+    text.name = title;
     // text.anchor.set(1, 0);
+    container.addChild(text);
+
+    return text;
+  };
+
+  const GameOverText = (app) => {
+    const container = new PIXI.Container();
+    app.stage.addChild(container);
+
+    // Create a style for the score text
+    const textStyle = new PIXI.TextStyle({
+      fontFamily: "Arial",
+      fontSize: 48,
+      fill: "white",
+      align: "center",
+    });
+
+    const text = new PIXI.Text(`GAME OVER`, textStyle);
+    text.name = "GameOver";
+    text.anchor.set(0.5);
     container.addChild(text);
 
     return text;
@@ -258,6 +279,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     let dragons = [];
     let platforms = [];
     let hitPlatforms = ["p0"];
+    let lives = 3;
 
     // *** Init ground *** //
     const ground = await initGround(app, gameWorld);
@@ -274,6 +296,8 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     superSpineboy.zIndex = 1;
 
     const setupGame = async (level) => {
+      lives = 3;
+
       // *** Init platforms *** //
       let platformCount = 10 + level;
       let newPlatforms = [];
@@ -324,9 +348,12 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
           }
 
           if (animationName === superSpineboy.ANIM_DEATH) {
-            superSpineboy.respawn();
-            superSpineboy.health = 100;
-            updateHealth(superSpineboy.health);
+            console.log(`live remaingin: ${superSpineboy.lives}`);
+            if (superSpineboy.lives > 0) {
+              superSpineboy.respawn();
+              superSpineboy.health = 100;
+              updateHealth(superSpineboy.health);
+            }
           }
         },
       });
@@ -341,7 +368,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     // *** Game HUD *** //
     let score = 0;
     let scoreText = newHudText(app, "Score");
-    scoreText.position.set(app.screen.width - 600, 10);
+    scoreText.position.set(app.screen.width - 700, 10);
     let updateScore = (newScore) => {
       score = newScore;
       scoreText.text = `Score: ${score}`;
@@ -349,14 +376,21 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
 
     let points = 0;
     let pointsText = newHudText(app, "Points");
-    pointsText.position.set(app.screen.width - 400, 10);
+    pointsText.position.set(app.screen.width - 500, 10);
     let updatePoints = (newPoints) => {
       points = newPoints;
       pointsText.text = `Points: ${points}`;
     };
 
+    let livesText = newHudText(app, "Lives");
+    livesText.position.set(app.screen.width - 150, 10);
+    let updateLives = () => {
+      livesText.text = `Lives: ${superSpineboy.lives}`;
+    };
+    updateLives();
+
     let healthText = newHudText(app, "Health");
-    healthText.position.set(app.screen.width - 200, 10);
+    healthText.position.set(app.screen.width - 300, 10);
     let updateHealth = (newHealth) => {
       superSpineboy.health = newHealth;
       healthText.text = `Health: ${superSpineboy.health}`;
@@ -365,16 +399,23 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
 
     let level = 1;
     let levelText = newHudText(app, "Level");
-    levelText.position.set(app.screen.width - 800, 10);
+    levelText.position.set(app.screen.width - 850, 10);
     let updateLevel = (newLevel) => {
       level = newLevel;
       levelText.text = `Level: ${level}`;
     };
     updateLevel(level);
 
+    // game over
+    let gameOverText = GameOverText(app);
+    gameOverText.position.set(app.screen.width / 2, app.screen.height / 2);
+    gameOverText.visible = false;
+    let showGameOver = () => {
+      gameOverText.visible = true;
+      gameOverText.text = `GAME OVER\nLevel: ${level}\nScore: ${score}`;
+    };
+
     // *** Loop vars *** //
-    let tempText = "";
-    let helpText = "";
     let aboveGround = superSpineboy.y - 50;
     let bounds1, bounds2;
     let isDead = superSpineboy.health <= 0;
@@ -384,6 +425,13 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     // *** GAME LOOP *** //
     app.ticker.add((dt) => {
       isDead = superSpineboy.health <= 0;
+      if (livesText.text != superSpineboy.lives) {
+        updateLives();
+        if (superSpineboy.lives == 0 && !gameOverText.visible) {
+          updateScore(score + points);
+          showGameOver();
+        }
+      }
 
       if (win && !winTween) {
         console.log("win scene");
