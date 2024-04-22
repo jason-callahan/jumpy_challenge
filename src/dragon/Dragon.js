@@ -49,6 +49,6 @@ export default class Dragon extends Spine {
     super.update(dt);
 
     this.vx = this.facingRight ? this.speed : -this.speed;
-    this.x += this.vx;
+    this.x += this.vx * dt;
   }
 }

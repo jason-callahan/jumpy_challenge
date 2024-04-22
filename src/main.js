@@ -467,10 +467,10 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
 
       if (superSpineboy.isReady || isDead) {
         superSpineboy.tint = 0xffffff;
-        superSpineboy.vy += gravity;
+        superSpineboy.vy += gravity * dt;
         aboveGround = superSpineboy.y - 100;
-        superSpineboy.y += superSpineboy.vy;
-        superSpineboy.x += superSpineboy.vx;
+        superSpineboy.y += superSpineboy.vy * dt;
+        superSpineboy.x += superSpineboy.vx * dt;
 
         // *** Platforms collision *** //
         bounds1 = superSpineboy.getBounds();

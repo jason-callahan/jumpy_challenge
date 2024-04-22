@@ -35,15 +35,13 @@ npx vite build
 ```
 
 ## CD
-I'm using github pages here.  The vite.config.js file has settings for the build destination of "docs"
-along with the base path of the github project name.  This allows for setting the github pages root directory 
-to the main branch docs/ folder which acts like the root directory for a web site.
+I'm using github pages here.  The vite.config.js file has settings for the build destination of "docs" along with the base path of the github project name.  This allows for setting the github pages root directory to the main branch docs/ folder which acts like the root directory for a web site.
 
 
 ___
 
 ## Todo:
-- Limited number of lives to 3, so game ends
+- ~~Limited number of lives to 3, so game ends~~
 - Refactor code!
 - Make responsive enough to not break on full-screen
 - Normalize dimensions
@@ -51,6 +49,7 @@ ___
 - Refine controls: hold spacebar doesn't always work
 - Respawn on platform, center respawn on last platform
 - Add duck animation
+- Mobile friendly
 - Top 10 Score
 - Local top score (local storage)
 - Persist top 10 score to mongo
