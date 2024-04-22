@@ -371,7 +371,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     scoreText.position.set(app.screen.width - 700, 10);
     let updateScore = (newScore) => {
       score = newScore;
-      scoreText.text = `Score: ${score}`;
+      scoreText.text = `Score: ${Math.floor(score)}`;
     };
 
     let points = 0;
@@ -379,7 +379,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     pointsText.position.set(app.screen.width - 500, 10);
     let updatePoints = (newPoints) => {
       points = newPoints;
-      pointsText.text = `Points: ${points}`;
+      pointsText.text = `Points: ${Math.floor(points)}`;
     };
 
     let livesText = newHudText(app, "Lives");
@@ -393,7 +393,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
     healthText.position.set(app.screen.width - 300, 10);
     let updateHealth = (newHealth) => {
       superSpineboy.health = newHealth;
-      healthText.text = `Health: ${superSpineboy.health}`;
+      healthText.text = `Health: ${Math.floor(superSpineboy.health)}`;
     };
     updateHealth(100);
 
@@ -428,7 +428,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
       if (livesText.text != superSpineboy.lives) {
         updateLives();
         if (superSpineboy.lives == 0 && !gameOverText.visible) {
-          updateScore(score + points);
+          updateScore(Math.floor(score + points));
           showGameOver();
         }
       }
@@ -499,7 +499,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
         }
 
         if (!isDead) {
-          let newPoints = points - 1;
+          let newPoints = points - 1 * dt;
 
           // *** Dragons *** //
           for (let i = 0; i < dragons.length; i++) {
@@ -517,7 +517,7 @@ import starPng from "/assets/star_sprite_sheet_2d_128px.png";
             bounds2.y += bounds2.height * 0.1;
 
             if (isCollision(bounds1, bounds2)) {
-              superSpineboy.health -= 1;
+              superSpineboy.health -= 1 * dt;
               newPoints -= 1;
               if (superSpineboy.health <= 0) {
                 superSpineboy.health = 0;
